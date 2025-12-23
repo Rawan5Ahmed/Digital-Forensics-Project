@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WireFish PCAP Analyzer</title>
+<link rel="icon" type="image/png" href="/static/W-removebg-preview.png">
+<style>
+body { margin:0; font-family:Arial,sans-serif; background:#1a1f36; color:#fff; overflow-x:hidden; }
+
+/* HEADER */
+header { display:none; align-items:center; justify-content:space-between; padding:12px 20px;
+  background:linear-gradient(90deg,#ff7f50,#ff9933); position:fixed; top:0; width:100%; z-index:100; }
+header .brand { display:flex; align-items:center; gap:10px; }
+header button { background:#00aaff; color:#fff; padding:8px 16px; border:none; border-radius:8px;
+  cursor:pointer; font-weight:bold; margin-right:25px; transform: translateX(-15px); }
+header button:hover { background:#0088cc; }
+
+/* FOOTER */
+footer { display:none; padding:12px 20px; background:#0d1225; text-align:center; border-top:1px solid #ff9933;
+  color:#fff; position:fixed; bottom:0; width:100%; font-size:14px; }
+
+/* HOME */
+.home { height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:30px;
+  background:linear-gradient(180deg,#00aaff,#1a1f36); }
+.home img { width:260px; opacity:0.9; }
+.upload-btn { background:#ff7f50; padding:12px 22px; border-radius:8px; font-size:16px;
+  font-weight:bold; cursor:pointer; color:#fff; }
+.upload-btn:hover { background:#ff9933; }
+.upload-btn input { display:none; }
+
+/* MAIN CONTAINER */
+.container { display:none; grid-template-columns:1fr 3fr; gap:16px; padding:80px 16px 60px;
+  height:calc(100vh-80px); overflow-y:auto; background:#0d1225; }
+
+/* FILTER BAR */
+.filter-bar { display:flex; gap:10px; margin-bottom:16px; grid-column:1/-1; }
+.filter-bar input, .filter-bar select { padding:6px 10px; border-radius:6px; border:1px solid #ff9933;
+  background:#1a1f36; color:#fff; }
+.filter-bar button { padding:6px 12px; border:none; border-radius:6px; background:#00aaff;
+  color:#fff; cursor:pointer; font-weight:bold; }
+.filter-bar button:hover { background:#0088cc; }
+
+/* PANELS */
+.panel { background:#ff7f50; border-radius:12px; padding:16px; border:2px solid #ff9933;
+  position:relative; overflow-y:auto; max-height:calc(100vh-140px); color:#000;
+  opacity:0; transform:translateY(20px); transition:all 0.5s ease; }
+.panel.show { opacity:1; transform:translateY(0); }
+
+/* SECTIONS */
+.section { margin-bottom:20px; }
+.section h3 { margin-bottom:6px; font-size:18px; border-bottom:1px dashed #ff9933; padding-bottom:4px; }
+
+/* ALERT ITEMS */
+.alert { padding:10px 16px; border-radius:8px; margin-bottom:8px; font-weight:bold;
+  display:flex; align-items:center; gap:10px; color:#fff; }
+.alert img { width:18px; height:18px; }
+.alert.critical { background:#ff0000; }
+.alert.warning { background:#ff9933; }
+
+/* WATERMARKS */
+#alert-panel::before {
+  content:""; position:absolute; inset:0;
+  background:url('/static/exclamation.png') center/120px no-repeat;
+  opacity:0.3; pointer-events:none;
+}
+#merged-panel::before {
+  content:""; position:absolute; inset:0;
+  background:url('/static/W-removebg-preview.png') center/180px no-repeat;
+  opacity:0.1; pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<section class="home" id="home">
+  <img src="/static/W-removebg-preview.png" alt="WireFish Logo">
+  <label class="upload-btn">Upload PCAP File
+    <input type="file" accept=".pcap,.pcapng" onchange="uploadFile(this)">
+  </label>
+</section>
+
+<!-- HEADER -->
+<header id="header">
+  <div class="brand">
+    <img src="/static/W-removebg-preview.png" alt="Logo" style="height:36px;">
+    <strong>WireFish</strong>
+  </div>
+  <button onclick="goHome()" style="margin-left:-10px;">← Back to Main</button>
+</header>
+
+<!-- FOOTER -->
+<footer id="footer">
+  Contact us: hbutera461@gmail.com | rawanikodly@gmail.com
+</footer>
+
+<!-- APP -->
+<main class="container" id="app">
+  <div class="filter-bar">
+    <input type="text" id="search-ip" placeholder="Search IP...">
+    <select id="protocol-filter">
+      <option value="">All Protocols</option>
+      <option value="TCP">TCP</option>
+      <option value="UDP">UDP</option>
+      <option value="DNS">DNS</option>
+      <option value="HTTP">HTTP</option>
+    </select>
+    <button onclick="applyFilter()">Filter</button>
+  </div>
+
+  <!-- ALERTS -->
+  <section class="panel" id="alert-panel">
+    <h2>Suspicious Alerts</h2>
+    <div id="alerts-container">No alerts yet.</div>
+  </section>
+
+  <!-- SUMMARY + DETAILS MERGED -->
+  <section class="panel" id="merged-panel">
+    <h2> Details</h2>
+    <div id="merged-content"></div>
+  </section>
+</main>
+
+<script>
+let analysisData = null;
+
+function hideAllPanels(){ document.querySelectorAll(".panel").forEach(el=>el.classList.remove("show")); }
+
+function enterApp(){
+  document.getElementById("home").style.display="none";
+  document.getElementById("header").style.display="flex";
+  document.getElementById("app").style.display="grid";
+  document.getElementById("footer").style.display="block";
+  hideAllPanels();
+  document.getElementById("alert-panel").classList.add("show");
+  document.getElementById("merged-panel").classList.add("show");
+}
+
+function goHome(){
+  document.getElementById("home").style.display="flex";
+  document.getElementById("header").style.display="none";
+  document.getElementById("app").style.display="none";
+  document.getElementById("footer").style.display="none";
+  hideAllPanels();
+}
+
+function populateAlerts(data){
+  const c = document.getElementById("alerts-container");
+  let h="";
+
+  const threshold = 10000;
+  data.summary.top_talkers.forEach(t=>{
+    if(t[1]>threshold){
+      h+=`<div class="alert critical"><img src="/static/malicious.png">${t[0]} (${t[1]} bytes)</div>`;
+    }
+  });
+
+  data.dns_domains.forEach(d=>{
+    if(d.length>20||d.toLowerCase().includes("suspicious")){
+      h+=`<div class="alert warning">${d}</div>`;
+    }
+  });
+
+  const keys=["login","admin","password","auth"];
+  data.http_requests.forEach(r=>{
+    if(keys.some(k=>r.toLowerCase().includes(k))){
+      h+=`<div class="alert warning">${r}</div>`;
+    }
+  });
+
+  if(!h) h="<div>No suspicious activity detected.</div>";
+  c.innerHTML=h;
+}
+
+function populatePanels(data){
+  analysisData=data;
+  populateAlerts(data);
+
+  let tt="";
+  if(data.summary.top_talkers.length){
+    const m=data.summary.top_talkers[0][1];
+    data.summary.top_talkers.forEach((t,i)=>{
+      const p=Math.round((t[1]/m)*100);
+      tt+=`<div><strong>#${i+1} ${t[0]}</strong> (${t[1]} bytes)<div style="height:8px;width:${p}%;border-radius:4px;background:linear-gradient(90deg,#ff7f50,#00aaff);margin-top:2px;"></div></div>`;
+    });
+  } else tt="<div>No traffic data</div>";
+
+  document.getElementById("merged-content").innerHTML=`
+    <div class="section">
+      <b>Total Packets:</b> ${data.summary.total_packets}<br>
+      <b>TCP:</b> ${data.summary.tcp_count}<br>
+      <b>UDP:</b> ${data.summary.udp_count}<br>
+      <b>Unique SRC: </b>${data.summary.unique_src}<br> 
+      <b>Unique DST:</b> ${data.summary.unique_dst}<br>
+      <b>DNS: </b>${data.summary.dns_count}<br> 
+      <b>HTTP: </b>${data.summary.http_count}<br> <br>
+      <b>Top Talkers:</b><br>${tt}
+    </div>
+    <div class="section"><h3>DNS Queries</h3><ul>${data.dns_domains.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+    <div class="section"><h3>HTTP Requests</h3><ul>${data.http_requests.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+    <div class="section"><h3>HTTP Responses</h3><ul>${data.http_responses.map(x=>`<li>${x.status_line} (Len:${x.content_length})</li>`).join("")}</ul></div>
+  `;
+}
+
+function uploadFile(i){
+  const f=i.files[0]; if(!f) return;
+  const fd=new FormData(); fd.append("file",f);
+  fetch("/upload",{method:"POST",body:fd}).then(r=>r.json())
+  .then(d=>{enterApp();populatePanels(d);}).catch(e=>alert("Upload failed "+e));
+}
+
+function applyFilter(){
+  if(!analysisData) return;
+  const ip=document.getElementById("search-ip").value.toLowerCase();
+  const pr=document.getElementById("protocol-filter").value;
+  populatePanels({...analysisData});
+}
+</script>
+
+</body>
+</html>
