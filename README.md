@@ -71,5 +71,16 @@ WireFish/
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/Rawan5Ahmed/Digital-Forensics-Project.git
-cd Digital-Forensics-Project/WireFish
+```git clone https://github.com/Rawan5Ahmed/Digital-Forensics-Project.git```
+```cd Digital-Forensics-Project/WireFish```
+
+2. Install dependencies:
+```pip install flask scapy```
+
+3. Run the application:
+```python app.py```
+
+4. Open your browser and visit:
+```http://127.0.0.1:5000```
+
+5. Upload a PCAP file and explore summaries, details, and alerts.
