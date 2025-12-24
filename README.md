@@ -71,6 +71,7 @@ WireFish/
 1. Clone the repository:
 
 ```git clone https://github.com/Rawan5Ahmed/Digital-Forensics-Project.git```
+
 ```cd Digital-Forensics-Project/WireFish```
 
 2. Install dependencies:
@@ -84,7 +85,7 @@ WireFish/
 
 5. Upload a PCAP file and explore summaries, details, and alerts.
 
-### Usage Tips
+## Usage Tips
 
 Test with real PCAP samples to trigger alerts.
 
@@ -96,7 +97,7 @@ Customize alert heuristics in heuristics.py for new suspicious patterns.
 
 Regularly clear uploads/ folder to keep storage clean.
 
-### Contact
+## Contact
 
 For inquiries or collaboration:
 
