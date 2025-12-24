@@ -70,7 +70,6 @@ WireFish/
 
 1. Clone the repository:
 
-```bash
 ```git clone https://github.com/Rawan5Ahmed/Digital-Forensics-Project.git```
 ```cd Digital-Forensics-Project/WireFish```
 
@@ -84,3 +83,23 @@ WireFish/
 ```http://127.0.0.1:5000```
 
 5. Upload a PCAP file and explore summaries, details, and alerts.
+
+### Usage Tips
+
+Test with real PCAP samples to trigger alerts.
+
+Use the search and filter bar to focus on specific IPs or protocols.
+
+Export JSON/CSV for further analysis or documentation.
+
+Customize alert heuristics in heuristics.py for new suspicious patterns.
+
+Regularly clear uploads/ folder to keep storage clean.
+
+### Contact
+
+For inquiries or collaboration:
+
+hbutera461@gmail.com
+
+rawanikodly@gmail.com
